@@ -1,4 +1,4 @@
-# TODO: まずは一定時間立つとユーザを消去するのはなしで実装してみる
+# TODO: ステージ2に取り掛かる
 
 import socket
 import time
@@ -13,6 +13,18 @@ sock.bind((server_address, server_port))
 
 # clientのアドレス(key)とその最新メッセージ送信時刻(value)を保存するディクショナリ
 clients = {}
+
+def cleanup_client():
+    INTERVAL = 30
+    current_time = time.time()
+
+    to_remove = [address for address, last_active in clients.items() if current_time - last_active > INTERVAL]
+
+    for address in to_remove:
+        del clients[address]
+
+last_cleanup = time.time()
+CLENUP_INTERVAL = 10
 
 while True:
     try:
@@ -32,6 +44,10 @@ while True:
         for client_address in clients:
             if client_address != address:
                 sock.sendto(data, client_address)
+
+        if time.time() - last_cleanup > CLENUP_INTERVAL:
+            cleanup_client()
+            last_cleanup = time.time()
     
     except KeyboardInterrupt:
         print("\nServer shutting down...")
